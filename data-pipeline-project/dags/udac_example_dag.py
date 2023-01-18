@@ -92,7 +92,17 @@ load_time_dimension_table = LoadDimensionOperator(
 
 run_quality_checks = DataQualityOperator(
     task_id='Run_data_quality_checks',
-    dag=dag
+    dag=dag,
+    dq_checks=[
+        {'check_sql': "SELECT COUNT(*) FROM songs WHERE songid is null", 'expected_result': 0, 'comparison': "="},
+        {'check_sql': "SELECT COUNT(*) FROM users WHERE userid is null", 'expected_result': 0, 'comparison': "="},
+        {'check_sql': "SELECT COUNT(*) FROM artists WHERE artistid is null", 'expected_result': 0, 'comparison': "="},
+        {'check_sql': "SELECT COUNT(*) FROM time WHERE start_time is null", 'expected_result': 0, 'comparison': "="},
+        {'check_sql': "SELECT COUNT(*) FROM songs", 'expected_result': 0, 'comparison': ">"},
+        {'check_sql': "SELECT COUNT(*) FROM users", 'expected_result': 0, 'comparison': ">"},
+        {'check_sql': "SELECT COUNT(*) FROM artists", 'expected_result': 0, 'comparison': ">"},
+        {'check_sql': "SELECT COUNT(*) FROM time", 'expected_result': 0, 'comparison': ">"},
+    ],
 )
 
 end_operator = DummyOperator(
@@ -100,20 +110,24 @@ end_operator = DummyOperator(
     dag=dag
 )
 
-start_operator >> stage_events_to_redshift
-start_operator >> stage_songs_to_redshift
-
-stage_events_to_redshift >> load_songplays_table
-stage_songs_to_redshift >> load_songplays_table
-
-load_songplays_table >> load_song_dimension_table
-load_songplays_table >> load_user_dimension_table
-load_songplays_table >> load_artist_dimension_table
-load_songplays_table >> load_time_dimension_table
-
-load_song_dimension_table >> run_quality_checks
-load_user_dimension_table >> run_quality_checks
-load_artist_dimension_table >> run_quality_checks
-load_time_dimension_table >> run_quality_checks
-
+start_operator >> [
+                    stage_events_to_redshift,
+                    stage_songs_to_redshift
+                   ]
+[
+    stage_events_to_redshift,
+    stage_songs_to_redshift
+] >> load_songplays_table
+load_songplays_table >> [
+                            load_artist_dimension_table,
+                            load_song_dimension_table,
+                            load_time_dimension_table,
+                            load_user_dimension_table
+                         ]
+[
+    load_artist_dimension_table,
+    load_song_dimension_table,
+    load_time_dimension_table,
+    load_user_dimension_table
+ ] >> run_quality_checks
 run_quality_checks >> end_operator

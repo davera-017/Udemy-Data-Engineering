@@ -36,13 +36,13 @@ class StageToRedshiftOperator(BaseOperator):
         self.s3_key = self.s3_key.format(**context)
         s3_path = f"s3://{self.s3_bucket}/{self.s3_key}"
         redshift_hook.run(
-            f"\
-            COPY {self.table} FROM '{s3_path}' \
-            REGION 'us-west-2' \
-            ACCESS_KEY_ID '{credentials.access_key}' \
-            SECRET_ACCESS_KEY '{credentials.secret_key}' \
-            FORMAT AS JSON '{self.json_path}' \
-            "
+            f"""
+            COPY {self.table} FROM '{s3_path}'
+            REGION 'us-west-2'
+            ACCESS_KEY_ID '{credentials.access_key}'
+            SECRET_ACCESS_KEY '{credentials.secret_key}'
+            FORMAT AS JSON '{self.json_path}'
+            """
             )
 
         self.log.info(f"SUCCESS: {self.task_id}")
