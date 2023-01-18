@@ -13,7 +13,7 @@ class StageToRedshiftOperator(BaseOperator):
                  table,
                  s3_bucket,
                  s3_key,
-                 json_path,
+                 json_path = "auto",
                  *args, **kwargs):
 
         super(StageToRedshiftOperator, self).__init__(*args, **kwargs)
@@ -38,6 +38,7 @@ class StageToRedshiftOperator(BaseOperator):
         redshift_hook.run(
             f"\
             COPY {self.table} FROM '{s3_path}' \
+            REGION 'us-west-2' \
             ACCESS_KEY_ID '{credentials.access_key}' \
             SECRET_ACCESS_KEY '{credentials.secret_key}' \
             FORMAT AS JSON '{self.json_path}' \
